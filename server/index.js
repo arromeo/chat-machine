@@ -44,10 +44,6 @@ wsServer.on('connection', (socket) => {
 
   socket.on('message', receiveMessage);
 
-  socket.on('close', () => {
-    clearInterval(intervalRef);
-  });
-
   sendMessage();
 });
 
