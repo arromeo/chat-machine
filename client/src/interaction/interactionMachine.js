@@ -1,67 +1,67 @@
 import { Machine } from 'xstate';
 import { assign } from '@xstate/immer';
 
-export const interactionStates = {
+export const states = {
   BOT_TURN: 'interactionState/botTurn',
   RESPONDENT_TURN: 'interactionState/respondentTurn'
 };
 
-export const interactionEvents = {
+export const events = {
   BOT_MESSAGE: 'interactionEvent/botMessage',
   RESPONDENT_MESSAGE: 'interactionEvent/respondentMessage'
 };
 
-export const interactionActions = {
+export const actions = {
   CHAT_MESSAGE: 'interactionAction/botMessage',
   SWITCH_TO_RESPONDENT: 'interactionAction/swithToRespondent'
 };
 
-export const interactionGuards = {
+export const guards = {
   RESPONDENTS_TURN: 'interactionGuard/respondentsTurn'
 };
 
 export const interactionMachine = Machine(
   {
     id: 'interaction',
-    initial: interactionStates.BOT_TURN,
+    initial: states.BOT_TURN,
     context: {
       chat: [],
       messages: {}
     },
     states: {
-      [interactionStates.BOT_TURN]: {},
-      [interactionStates.RESPONDENT_TURN]: {
+      [states.BOT_TURN]: {},
+      [states.RESPONDENT_TURN]: {
         on: {
-          [interactionEvents.RESPONDENT_MESSAGE]: {
-            target: interactionStates.BOT_TURN,
-            actions: interactionActions.CHAT_MESSAGE
+          [events.RESPONDENT_MESSAGE]: {
+            target: states.BOT_TURN,
+            actions: actions.CHAT_MESSAGE
           }
         }
       }
     },
     on: {
-      [interactionEvents.BOT_MESSAGE]: [
+      [events.BOT_MESSAGE]: [
         {
-          target: interactionStates.RESPONDENT_TURN,
-          cond: interactionGuards.RESPONDENTS_TURN,
-          actions: interactionActions.CHAT_MESSAGE
+          target: states.RESPONDENT_TURN,
+          cond: guards.RESPONDENTS_TURN,
+          actions: actions.CHAT_MESSAGE
         },
         {
-          actions: interactionActions.CHAT_MESSAGE
+          actions: actions.CHAT_MESSAGE
         }
       ]
     }
   },
   {
     actions: {
-      [interactionActions.CHAT_MESSAGE]: assign((ctx, evt) => {
+      [actions.CHAT_MESSAGE]: assign((ctx, evt) => {
         const { messageId, sender, text } = evt;
         ctx.messages[messageId] = { id: messageId, sender, text };
         ctx.chat.push(messageId);
       })
     },
     guards: {
-      [interactionGuards.RESPONDENTS_TURN]: (_, evt) => evt.isQuestion
+      [guards.RESPONDENTS_TURN]: (_, evt) => evt.isQuestion
     }
   }
 );
