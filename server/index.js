@@ -29,7 +29,7 @@ wsServer.on('connection', (socket) => {
   }
 
   function sendMessage() {
-    if (!waiting) {
+    while (!waiting) {
       waiting = random(3);
       socket.send(createMessage());
     }
@@ -38,17 +38,17 @@ wsServer.on('connection', (socket) => {
   function receiveMessage(message) {
     if (waiting) {
       waiting = false;
-      console.log('msg received:', message);
+      return sendMessage();
     }
   }
 
   socket.on('message', receiveMessage);
 
-  const intervalRef = setInterval(sendMessage, 1000);
-
   socket.on('close', () => {
     clearInterval(intervalRef);
   });
+
+  sendMessage();
 });
 
 const server = app.listen(3010, () => console.log('listening on port 3000...'));

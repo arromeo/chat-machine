@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { of } from 'rxjs';
+import { concatMap, delay } from 'rxjs/operators';
 import { webSocket } from 'rxjs/webSocket';
+
+function dynamicDelay(msg) {
+  return of(msg).pipe(delay(msg.text.length * 30));
+}
 
 /**
  * Sets up socket connection and returns a callback to send messages over the
@@ -15,7 +21,7 @@ export function useSocket(botMessage) {
   useEffect(() => {
     subject.current = webSocket('ws://localhost:3010');
 
-    subject.current.subscribe(
+    subject.current.pipe(concatMap(dynamicDelay)).subscribe(
       botMessage,
       (err) => console.log(err),
       () => console.log('complete')
