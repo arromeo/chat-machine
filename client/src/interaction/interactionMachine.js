@@ -3,6 +3,10 @@ import { assign } from '@xstate/immer';
 
 export const states = {
   BOT_TURN: 'interactionState/botTurn',
+  BOT_TYPING: 'interactionState/botTyping',
+  BOT_THINKING: 'interactionState/botThinking',
+  BOT_COLLECTING: 'interactionState/botCollecting',
+  BOT_APOLOGY: 'interactionState/botApology',
   RESPONDENT_TURN: 'interactionState/respondentTurn'
 };
 
@@ -29,7 +33,27 @@ export const interactionMachine = Machine(
       messages: {}
     },
     states: {
-      [states.BOT_TURN]: {},
+      [states.BOT_TURN]: {
+        initial: states.BOT_TYPING,
+        states: {
+          [states.BOT_TYPING]: {
+            after: {
+              4000: states.BOT_THINKING
+            }
+          },
+          [states.BOT_THINKING]: {
+            after: {
+              8000: states.BOT_COLLECTING
+            }
+          },
+          [states.BOT_COLLECTING]: {
+            after: {
+              16000: states.BOT_APOLOGY
+            }
+          },
+          [states.BOT_APOLOGY]: {}
+        }
+      },
       [states.RESPONDENT_TURN]: {
         on: {
           [events.RESPONDENT_MESSAGE]: {
@@ -47,6 +71,7 @@ export const interactionMachine = Machine(
           actions: actions.CHAT_MESSAGE
         },
         {
+          target: `${states.BOT_TURN}.${states.BOT_TYPING}`,
           actions: actions.CHAT_MESSAGE
         }
       ]

@@ -1,6 +1,11 @@
 import { useRef } from 'react';
 import { useInteraction, interactionStates } from './interaction';
 
+function ProgressiveTyping(props) {
+  const { state } = props;
+  return <div style={{ color: 'green' }}>[{state}]</div>;
+}
+
 function App() {
   const inputRef = useRef();
   const { messages, respondentMessage, state } = useInteraction();
@@ -22,6 +27,9 @@ function App() {
           {message.text}
         </div>
       ))}
+      {state[interactionStates.BOT_TURN] && (
+        <ProgressiveTyping state={state[interactionStates.BOT_TURN]} />
+      )}
       {state === interactionStates.RESPONDENT_TURN && (
         <div>
           <input ref={inputRef} type="text" />

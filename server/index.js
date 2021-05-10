@@ -2,14 +2,14 @@ const express = require('express');
 const ws = require('ws');
 const faker = require('faker');
 const { v4: uuid } = require('uuid');
+const { random_bm, random_denominator } = require('./utils');
 
 const app = express();
 
-const channelId = uuid();
-const chatId = uuid();
+async function randomDelay() {
+  const delay = 2000 + Math.abs(random_bm() * 5000);
 
-function random(denominator) {
-  return Math.random() < 1 / denominator;
+  return new Promise((resolve) => setTimeout(resolve, delay));
 }
 
 const wsServer = new ws.Server({ noServer: true });
@@ -19,8 +19,6 @@ wsServer.on('connection', (socket) => {
   function createMessage() {
     return JSON.stringify({
       messageId: uuid(),
-      channelId,
-      chatId,
       dateTime: new Date().getTime(),
       text: faker.lorem.sentence(),
       isQuestion: waiting,
@@ -28,23 +26,24 @@ wsServer.on('connection', (socket) => {
     });
   }
 
-  function sendMessage() {
+  function sendBotMessages() {
     while (!waiting) {
-      waiting = random(3);
+      waiting = random_denominator(2);
       socket.send(createMessage());
     }
   }
 
-  function receiveMessage(message) {
+  async function receiveMessage() {
     if (waiting) {
       waiting = false;
-      return sendMessage();
+      await randomDelay();
+      return sendBotMessages();
     }
   }
 
   socket.on('message', receiveMessage);
 
-  sendMessage();
+  sendBotMessages();
 });
 
 const server = app.listen(3010, () => console.log('listening on port 3000...'));
