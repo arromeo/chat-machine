@@ -36,6 +36,20 @@ export const interactionMachine = Machine(
                 }
               },
               apology: {}
+            },
+            on: {
+              BOT_MESSAGE: [
+                {
+                  actions: 'chatMessage',
+                  target: 'respondentsTurn',
+                  cond: 'respondentsTurn'
+                },
+                {
+                  actions: 'chatMessage',
+                  target: 'botsTurn.typing'
+                }
+              ],
+              END_CHAT: '#chat.finished'
             }
           },
           respondentsTurn: {
@@ -49,29 +63,19 @@ export const interactionMachine = Machine(
           history: {
             type: 'history'
           }
-        },
-        on: {
-          BOT_MESSAGE: [
-            {
-              actions: 'chatMessage',
-              target: 'chatting.respondentsTurn',
-              cond: 'respondentsTurn'
-            },
-            {
-              actions: 'chatMessage',
-              target: 'chatting.botsTurn.typing'
-            }
-          ]
         }
       },
-      disconnected: {},
+      disconnected: {
+        on: {
+          CONNECT: 'chatting.history'
+        }
+      },
       finished: {
         type: 'final'
       }
     },
     on: {
-      DISCONNECT: 'disconnected',
-      CONNECT: 'chatting.history'
+      DISCONNECT: 'disconnected'
     }
   },
   {
