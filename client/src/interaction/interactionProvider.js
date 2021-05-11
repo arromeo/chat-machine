@@ -1,8 +1,9 @@
-import { createContext, useCallback } from 'react';
+import { createContext, useCallback, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { useMachine } from '@xstate/react';
-import { events, interactionMachine } from './interactionMachine';
+import { interactionMachine } from './interactionMachine';
 import { useSocket } from './useSocket';
+import useConnectionDetection from '../hooks/useConnectionDetection';
 
 export const InteractionContext = createContext({});
 
@@ -11,10 +12,14 @@ export function InteractionProvider(props) {
 
   const [state, send] = useMachine(interactionMachine);
 
+  useEffect(() => {
+    send('START_CHAT');
+  }, [send]);
+
   const botMessage = useCallback(
     (evt) =>
       send({
-        type: events.BOT_MESSAGE,
+        type: 'BOT_MESSAGE',
         ...evt
       }),
     [send]
@@ -25,7 +30,7 @@ export function InteractionProvider(props) {
   const respondentMessage = useCallback(
     (text) => {
       send({
-        type: events.RESPONDENT_MESSAGE,
+        type: 'RESPONDENT_MESSAGE',
         messageId: uuid(),
         sender: 'respondent',
         text
@@ -41,8 +46,18 @@ export function InteractionProvider(props) {
       (messageId) => state.context.messages[messageId]
     ),
     respondentMessage,
-    state: state.value
+    state
   };
+
+  const disconnect = useCallback(() => {
+    send('DISCONNECT');
+  }, [send]);
+
+  const reconnect = useCallback(() => {
+    send('CONNECT');
+  }, [send]);
+
+  useConnectionDetection(reconnect, disconnect);
 
   return (
     <InteractionContext.Provider value={contextValue}>

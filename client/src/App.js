@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { useInteraction, interactionStates } from './interaction';
+import { useInteraction } from './interaction';
 
 function ProgressiveTyping(props) {
   const { state } = props;
@@ -27,10 +27,13 @@ function App() {
           {message.text}
         </div>
       ))}
-      {state[interactionStates.BOT_TURN] && (
-        <ProgressiveTyping state={state[interactionStates.BOT_TURN]} />
+      {state.value.chatting?.botsTurn && (
+        <ProgressiveTyping state={state.value.chatting.botsTurn} />
       )}
-      {state === interactionStates.RESPONDENT_TURN && (
+      {state.value === 'disconnected' && (
+        <div style={{ color: 'purple' }}>[Disconnected]</div>
+      )}
+      {state.value.chatting === 'respondentsTurn' && (
         <div>
           <input ref={inputRef} type="text" />
           <button onClick={submitMessage}>Submit</button>

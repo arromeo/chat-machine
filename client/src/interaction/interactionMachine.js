@@ -1,92 +1,89 @@
 import { Machine } from 'xstate';
 import { assign } from '@xstate/immer';
 
-export const states = {
-  BOT_TURN: 'interactionState/botTurn',
-  BOT_TYPING: 'interactionState/botTyping',
-  BOT_THINKING: 'interactionState/botThinking',
-  BOT_COLLECTING: 'interactionState/botCollecting',
-  BOT_APOLOGY: 'interactionState/botApology',
-  RESPONDENT_TURN: 'interactionState/respondentTurn'
-};
-
-export const events = {
-  BOT_MESSAGE: 'interactionEvent/botMessage',
-  RESPONDENT_MESSAGE: 'interactionEvent/respondentMessage'
-};
-
-export const actions = {
-  CHAT_MESSAGE: 'interactionAction/botMessage',
-  SWITCH_TO_RESPONDENT: 'interactionAction/swithToRespondent'
-};
-
-export const guards = {
-  RESPONDENTS_TURN: 'interactionGuard/respondentsTurn'
-};
-
 export const interactionMachine = Machine(
   {
-    id: 'interaction',
-    initial: states.BOT_TURN,
+    id: 'chat',
+    initial: 'initializing',
     context: {
       chat: [],
       messages: {}
     },
     states: {
-      [states.BOT_TURN]: {
-        initial: states.BOT_TYPING,
-        states: {
-          [states.BOT_TYPING]: {
-            after: {
-              4000: states.BOT_THINKING
-            }
-          },
-          [states.BOT_THINKING]: {
-            after: {
-              8000: states.BOT_COLLECTING
-            }
-          },
-          [states.BOT_COLLECTING]: {
-            after: {
-              16000: states.BOT_APOLOGY
-            }
-          },
-          [states.BOT_APOLOGY]: {}
+      initializing: {
+        on: {
+          START_CHAT: 'chatting.botsTurn.typing'
         }
       },
-      [states.RESPONDENT_TURN]: {
-        on: {
-          [events.RESPONDENT_MESSAGE]: {
-            target: states.BOT_TURN,
-            actions: actions.CHAT_MESSAGE
+      chatting: {
+        states: {
+          botsTurn: {
+            initial: 'typing',
+            states: {
+              typing: {
+                after: {
+                  4000: 'thinking'
+                }
+              },
+              thinking: {
+                after: {
+                  4000: 'collecting'
+                }
+              },
+              collecting: {
+                after: {
+                  8000: 'apology'
+                }
+              },
+              apology: {}
+            }
+          },
+          respondentsTurn: {
+            on: {
+              RESPONDENT_MESSAGE: {
+                target: 'botsTurn',
+                actions: 'chatMessage'
+              }
+            }
+          },
+          history: {
+            type: 'history'
           }
+        },
+        on: {
+          BOT_MESSAGE: [
+            {
+              actions: 'chatMessage',
+              target: 'chatting.respondentsTurn',
+              cond: 'respondentsTurn'
+            },
+            {
+              actions: 'chatMessage',
+              target: 'chatting.botsTurn.typing'
+            }
+          ]
         }
+      },
+      disconnected: {},
+      finished: {
+        type: 'final'
       }
     },
     on: {
-      [events.BOT_MESSAGE]: [
-        {
-          target: states.RESPONDENT_TURN,
-          cond: guards.RESPONDENTS_TURN,
-          actions: actions.CHAT_MESSAGE
-        },
-        {
-          target: `${states.BOT_TURN}.${states.BOT_TYPING}`,
-          actions: actions.CHAT_MESSAGE
-        }
-      ]
+      DISCONNECT: 'disconnected',
+      CONNECT: 'chatting.history'
     }
   },
   {
     actions: {
-      [actions.CHAT_MESSAGE]: assign((ctx, evt) => {
+      chatMessage: assign((ctx, evt) => {
         const { messageId, sender, text } = evt;
         ctx.messages[messageId] = { id: messageId, sender, text };
         ctx.chat.push(messageId);
       })
     },
     guards: {
-      [guards.RESPONDENTS_TURN]: (_, evt) => evt.isQuestion
+      respondentsTurn: (_, evt) => evt.isQuestion
     }
   }
 );
