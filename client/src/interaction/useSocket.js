@@ -23,7 +23,7 @@ export function useSocket(botMessage) {
 
     subject.current.pipe(concatMap(dynamicDelay)).subscribe(
       botMessage,
-      (err) => console.log(err),
+      (err) => subject.current.reconnect(),
       () => console.log('complete')
     );
 
@@ -31,7 +31,7 @@ export function useSocket(botMessage) {
   }, [botMessage]);
 
   const sendMessage = useCallback((message) => {
-    subject.current?.next({ message });
+    subject.current.next({ message });
   }, []);
 
   return {
